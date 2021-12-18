@@ -1,0 +1,30 @@
+version: "3.8"
+services:
+  node:
+    build: .
+    volumes:
+      - ./:/home/node/app
+    depends_on:
+      - postgres
+    ports:
+      - "3150:3150"
+    networks:
+      - default
+    command: "npm start"
+
+  postgres:
+    image: "postgis/postgis"
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_persdata:/var/lib/postgrespers
+    environment:
+      POSTGRES_USER: ticmacs
+      POSTGRES_PASSWORD: ticmacs
+      POSTGRES_DB: ticmacs
+    networks:
+      - default
+networks:
+  default:
+volumes:
+  db_persdata : {}
