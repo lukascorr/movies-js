@@ -1,11 +1,8 @@
-import fastify from "fastify";
-import moviesRoutes from "./routes/movies.routes";
+import express from "express";
+import MoviesRoutes from "./routes/movies.routes";
 
-export function build(opts={}) {
-    const app = fastify(opts)
+const app = express();
 
-    app.register(moviesRoutes);
+app.use(MoviesRoutes)
 
-    return app
-}
-
+export default app

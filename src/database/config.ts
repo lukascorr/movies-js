@@ -1,4 +1,7 @@
 import {Sequelize} from "sequelize";
+import {config} from "dotenv";
+
+config();
 
 export const db = new Sequelize(
     String(process.env.DB_NAME),

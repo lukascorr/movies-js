@@ -1,11 +1,16 @@
-import {FastifyInstance, FastifyPluginAsync, FastifyPluginOptions} from "fastify";
 import { MovieController} from "../controllers/movie.controller";
+import express, {Router} from "express";
+import cors from "cors";
+import multer from "multer";
 
-const moviesRoutes: FastifyPluginAsync = async (server: FastifyInstance, options: FastifyPluginOptions) => {
-    server.get('/movies', MovieController.getMovies)
-    server.post('/movies', MovieController.storeMovie)
-    server.patch('/movies/:movie_id', MovieController.updateMovie)
-    server.delete('/movies/:movie_id', MovieController.deleteMovie)
-}
+const upload = multer({dest: 'uploads/'});
+const router = Router();
+router.use(cors());
+router.use(express.json());
 
-export default moviesRoutes
+router.get('/movies', MovieController.getMovies);
+router.post('/movies', upload.single('file'), MovieController.storeMovie);
+router.patch('/movies/:movie_id', MovieController.updateMovie)
+router.delete('/movies/:movie_id', MovieController.deleteMovie)
+
+export default router

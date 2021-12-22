@@ -2,13 +2,14 @@ import {Movie} from "../models/movie";
 import {Op} from "sequelize";
 import * as fs from "fs";
 import {parse} from "csv-parse";
+import {Request, Response} from "express";
 
 export class MovieController {
-    static getMovies = async (req: any, res: any) => {
+    static getMovies = async (req: Request, res: Response) => {
 
         const title = req.query.title ?? ''
-        const page = req.query.page ?? 0;
-        const size = 5;
+        const page = Number(req.query.page) ?? 0;
+        const size = 2;
 
         const movies = await Movie.findAll({
             where: {
@@ -16,6 +17,9 @@ export class MovieController {
                     [Op.iLike]: '%' + title + '%'
                 }
             },
+            order: [
+                ['id', 'ASC'],
+            ],
             limit: size,
             offset: page * size
         });
@@ -23,43 +27,39 @@ export class MovieController {
         res.send(movies);
     }
 
-    static storeMovie = async (req: any, res: any) => {
+    static storeMovie = async (req: Request, res: Response) => {
         try {
-            console.log(req.body)
-            // let csvData: string[] = [];
-            // fs.createReadStream(req.file.path)
-            //     .pipe(parse({delimiter: ';'}))
-            //     .on('data', (csvrow) => {
-            //         console.log(csvrow);
-            //         //do something with csvrow
-            //         csvData.push(csvrow);
-            //     })
-            //     .on('end',function() {
-            //         //do something with csvData
-            //         console.log(csvData);
-            //     });
+            let csvData: string[] = [];
+            // @ts-ignore
+            fs.createReadStream(req.file?.path,'utf8')
+                .pipe(parse({delimiter: ';'}))
+                .on('data', (csvrow) => {
+                    csvData = csvrow;
+                })
+                .on('end',() => {
+                    this.saveMovie(csvData)
+                });
 
-            return res.code(200).send('moviesRoutes');
+            return res.status(200).send('success');
         } catch (error) {
-            return res.code(400).send(error);
+            return res.status(400).send(error);
         }
     }
 
-    static updateMovie = async (req: any, res: any) => {
+    static updateMovie = async (req: Request, res: Response) => {
         try {
-            await Movie.update(
-                { title: req.body.title },
-                { where: { id: req.params.movie_id } }
-            );
             const movie = await Movie.findByPk(req.params.movie_id);
+            if (movie !== null) {
+                await movie.update(req.body);
+            }
 
-            return res.code(200).send(movie);
+            return res.status(200).send(movie);
         } catch (error) {
-            return res.code(500).send(error);
+            return res.status(400).send(error);
         }
     }
 
-    static deleteMovie = async (req: any, res: any) => {
+    static deleteMovie = async (req: Request, res: Response) => {
         try {
             await Movie.destroy({
                 where: {
@@ -68,7 +68,21 @@ export class MovieController {
             })
             return res.send('success');
         } catch (error) {
-            return res.code(400).send(error);
+            return res.status(400).send(error);
         }
+    }
+
+    private static saveMovie(csvData: string[])
+    {
+        csvData.forEach(async data => {
+            const movie = await Movie.findOne({
+                where: {
+                    title: data
+                },
+            });
+            if (movie === null) {
+                await Movie.create({ title: data });
+            }
+        })
     }
 }
